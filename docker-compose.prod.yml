@@ -1,0 +1,114 @@
+x-logging:
+  &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100m
+
+volumes:
+  django-data:
+  postgres-data:
+  redis-data:
+
+services:
+  app:
+    build: .
+    expose:
+      - 8000
+    image: app:django
+    volumes:
+      - .:/django
+    container_name: django_container
+    command: >
+      sh -c "python manage.py migrate &&
+            python manage.py shell < sql_subjects.py &&
+            python manage.py collectstatic --no-input &&
+            gunicorn icode.wsgi:application --workers=4 --bind 0.0.0.0:8000"
+    restart: always
+    depends_on:
+      django-db:
+        condition: service_healthy
+    
+  nginx:
+    build: ./nginx
+    volumes:
+      - .:/django
+    ports:
+      - 1337:80
+    depends_on:
+      - app
+      
+  django-db:
+    image: postgres:13.0
+    volumes:
+      - django-data:/var/lib/postgresql/data/
+    <<: *default-logging
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+    container_name: django_postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      
+  # base de datos en utilizada por judge0
+  db:
+    image: postgres:13.0
+    env_file: judge0.conf
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
+    <<: *default-logging
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judge0 -d judge0"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  
+  # servicios de judge0 (server, workers, redis)
+  server:
+    image: judge0/judge0:1.13.0
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    ports:
+      - "2358:2358"
+    privileged: true
+    <<: *default-logging
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      
+  workers:
+    image: judge0/judge0:1.13.0
+    command: ["./scripts/workers"]
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    privileged: true
+    <<: *default-logging
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started 
+
+  redis:
+    image: redis:6.0
+    command: [
+      "bash", "-c",
+      'docker-entrypoint.sh --appendonly yes --requirepass "$$REDIS_PASSWORD"'
+    ]
+    env_file: judge0.conf
+    volumes:
+      - redis-data:/data
+    <<: *default-logging
+    restart: always

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}
+¿Estás segur@ de que quieres eliminar el curso "{{ course.name }}"? Se eliminarán todas las actividades y sus entregas respectivas.
+{% endblock %}
+
+{% block content %}
+<form method="post">{% csrf_token %}
+    <input class="btn btn-danger" type="submit" value="Eliminar">
+    <input class="btn btn-secondary" type="button" onclick="window.location='{% url 'professor:course_students' pk=course.id %}';" value="Cancelar">
+</form>
+{% endblock %}

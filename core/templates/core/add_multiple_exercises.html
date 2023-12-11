@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Agrega Múltiples Ejercicios
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <input type="submit" class="btn btn-primary" value="Subir Ejercicios" />
+</form> 
+{% if upload_results %}
+<table class="table mt-3">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Archivo</th>
+      <th scope="col">Resultado</th>
+      <th scope="col">Errores</th>
+    </tr>
+  </thead>
+  
+  <tbody>
+    {% for result in upload_results %}
+    <tr>
+      <th scope="row">{{ forloop.counter }}</th>
+      <td>{{ result.0 }}</td>
+      <td>
+        {% if result.1 %}
+        <i class="fa-solid fa-check" style="color: #33d17a;"></i>
+        {% else %}
+        <i class="fa-solid fa-xmark" style="color: #e01b24;"></i>
+        {% endif %}
+      </td>
+      <td>{{ result.2|safe }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block head %}
+{{ coding_form.media }}
+{% endblock %}
+
+{% block title %}
+Revision de ejercicios
+
+{% endblock %}
+
+{% block content %}
+
+<form method="post">
+    {% csrf_token %}
+    {% if checked %} 
+        <h3>Nombre: {{ exercise.title }}</h3>
+        <p>Descripción: {{ exercise.description|linebreaks }}</p>
+        {% if exercise.exercise_type == 0 %}
+            {{ coding_form.as_p }}
+        {% elif exercise.exercise_type == 1 %}
+            {% for radio in m_form.solution %}
+                <label for="{{ radio.id_for }}">
+                    {{ radio.tag }} {{ radio.choice_label }}
+                </label>
+                <br>
+            {% endfor %}
+        {% endif %} 
+
+        {% if test_results %} 
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Entrada</th>
+                        <th scope="col">Resultado esperado</th>
+                        <th scope="col">Resultado obtenido</th>
+                        <th scope="col">Correcto?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for input, expected_output, real_output, passed in test_results %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ input|linebreaks }}</td>
+                        <td>{{ expected_output|linebreaks }}</td>
+                        <td>{{ real_output|linebreaks }}</td>
+                        <td>
+                            {% if passed %}
+                                <i class="fa-solid fa-check" style="color: #33d17a;"></i>
+                            {% else %}
+                                <i class="fa-solid fa-xmark" style="color: #e01b24;"></i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% elif options %}
+            <table>
+                <tr>
+                    <th>Resultado</th>
+                    <th>Respuesta Ejercicio</th>
+                    <th>Respuesta Seleccionada</th>
+                    <th>Explicacion Ejercicio</th>
+                </tr>
+                <tr>
+                    <td>{{options.correct_ans}}</td>
+                    <td>{{options.ex_ans}}</td>
+                    <td>{{options.selected_ans}}</td>
+                    <td>{{options.explanation}}</td>
+                </tr>
+            </table>
+        {% endif %}
+
+
+        <br>
+        <br>
+        <input class="btn btn-primary" type="submit" value="Probar Ejercicio">
+    {% else %}
+
+        {% for exercise, exercise_type in exercises %} 
+            <h3>Nombre: {{ exercise.title }}</h3>
+            <p>Descripción: {{ exercise.description|linebreaks }}</p>
+        {% if exercise_type == 'Coding' %}  
+            {{ coding_form.as_p }}
+        {% elif exercise_type == 'Multiple' %}
+            {% for form in multiple_choice_forms %}
+                {% if form.prefix == exercise.id|stringformat:"s" %}
+                    {% for radio in form.solution %}
+                        <label for="{{ radio.id_for }}">
+                            {{ radio.tag }} {{ radio.choice_label }}
+                        </label>
+                        <br>
+                    {% endfor %}
+                {% endif %}
+            <hr>
+            {% endfor %}
+        {% endif %}
+        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+        <hr>
+        {% endfor %} 
+        {% if checked %} 
+        <input class="btn btn-primary" type="submit" value="Probar Ejercicio">
+        {% else %} 
+        <input class="btn btn-primary" type="submit" value="Probar Ejercicio">
+        {% endif %} 
+    {% endif %}
+</form>
+
+
+{% endblock %}

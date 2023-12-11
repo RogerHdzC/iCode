@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+{% if coding_formset.0 %}
+  {{ coding_formset.0.media }}
+{% endif %}
+
+<style>
+    .timer-container {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background-color: #f2f2f2;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 9999; /* Valor alto de z-index */
+    }
+
+</style>
+
+{% endblock %}
+
+{% block title %}
+{{ submission.assignment.name }}
+{% endblock %}
+
+{% block content %} 
+
+<!--
+<div class="timer-container">
+    <h6><div id="timer"></div></h6>
+</div>
+-->
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="my-4">
+      {% if multiple_choice_formset %}
+        {{ multiple_choice_formset.management_form }}
+      {% endif %}
+      {% for form in multiple_choice_formset %}
+        <h2>{{ form.instance.exercise }}</h2>
+        <p>{{ form.instance.exercise.description|linebreaks }}</p>
+        {{ form|crispy }}
+        <hr>
+      {% endfor %}
+      
+      {% if coding_formset %}
+        {{ coding_formset.management_form }}
+      {% endif %}
+      {% for form in coding_formset %}
+        <h2>{{ form.instance.exercise }}</h2>
+        <p>{{ form.instance.exercise.description }}</p>
+        {% if submission.assignment.feedback == 2 %}
+          <div class="dropdown">
+            <button class="btn btn-sm btn-secondary dropdown-toggle text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Casos de prueba
+            </button>
+            <ul class="dropdown-menu">
+              {% for test_case in form.instance.exercise.test_cases.all %}
+                <li class="dropdown-item">{{ test_case }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+        <div id="coding-form-{{ forloop.counter0 }}">
+          {{ form.as_p }}
+          {% if submission.assignment.feedback >= 1 %}
+            <a class="btn btn-secondary probar-codigo-button" data-form-number="{{ forloop.counter0 }}" data-instance-id="{{ form.instance.id }}">Probar codigo</a>
+            <div class="result-container" id="result-container-{{ forloop.counter0 }}"></div>
+          {% endif %}
+        </div>
+        <hr>
+      {% endfor %}
+    </div>
+
+    <input class="btn btn-primary" type="submit" value="Entregar actividad" onclick="timeOutRedirecting = true; return confirm('¿Estás seguro que quieres entregar tu actividad?')">
+
+</form>
+
+<div id="duration" data-duration="{{duration}}"></div>
+<div id="redirect-url" data-url="{% url 'student:courses' %}"></div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $(".probar-codigo-button").click(function() {            
+            // Obtener el ID del formulario específico
+            var formNumber = $(this).data("form-number");
+            // Obtener el formulario correspondiente
+            var form = $("#coding-form" + formNumber);
+    
+            var solutionField = document.getElementById(`id_coding-${formNumber}-solution`);
+            var instanceId = $(this).data("instance-id");
+            var resultContainer = $("#result-container-" + formNumber);
+                        
+            // Construir el objeto de datos para enviar en la solicitud Ajax
+            var formData = {
+                'solution': solutionField.value,
+                'instance_id': instanceId
+            };
+            
+            const util = require('util')
+            $.ajax({
+                url: "/student/test-code/",  // Reemplaza '/ruta-de-la-vista/' con la URL de tu vista en Django
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    console.log("response:");
+                    console.log(Object.keys(response));
+                    console.log(response.success);
+                    console.log(response.message);
+                    
+                    var result = ''
+                    // Maneja la respuesta de la vista aquí
+                    {% if submission.assignment.feedback == 2 %}
+                        // Genera una tabla con los resultados de la ejecución del código
+                        result += '<p><strong>Resultado:</strong></p>'
+                        table = '<table class="table">' +
+                                  '<thead>' +
+                                    '<tr>' +
+                                      '<th scope="col">#</th>' +
+                                      '<th scope="col">Entrada</th>' +
+                                      '<th scope="col">Resultado esperado</th>' +
+                                      '<th scope="col">Resultado obtenido</th>' +
+                                      '<th scope="col">¿Correcto?</th>' +
+                                    '</tr>' +
+                                  '</thead>' +
+                                  '<tbody>';
+                        for (var i=0; i < response.input_list.length; i++) {
+                            icon = response.tests_passed[i] ? 'fa-check" style="color: #33d17a;"' : 'fa-xmark" style="color: #e01b24;"';
+                            table += '<tr>' +
+                                       '<th scope="row">' + (i+1) + '</th>' +
+                                       '<td>' + response.input_list[i] + '</td>' +
+                                       '<td>' + response.expected_output_list[i].replace(/\n/g, "<br>") + '</td>' +
+                                       '<td>' + response.stdout_list[i].replace(/\n/g, "<br>") + '</td>' +
+                                       '<td><i class="fa-solid ' + icon + '></i></td>' +
+                                     '</tr>';
+                        }
+                        table += '</tbody></table>';
+                        result += table;
+                    {% elif submission.assignment.feedback == 1 %}
+                        // Imprime el número de casos de prueba exitosos
+                        result += '<p><strong>Resultado:</strong></p>';
+                        var correct = response.tests_passed.filter((t) => t == true);
+                        result += 'Tu código pasó ' + correct.length + ' de ' + response.input_list.length + ' casos de prueba correctamente.'
+                    {% endif %}
+                    resultContainer.html(result);
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    // Maneja los errores de la solicitud aquí
+                    console.error(errorThrown);
+                }
+            });
+        });
+    });
+
+    var timeOutRedirecting = false;
+    console.log(timeOutRedirecting)
+
+    window.onbeforeunload = function() {
+        if(timeOutRedirecting == false){
+            return "Si sales de la página, se perderá tu progreso. ¿Estás seguro?";
+        }
+    };
+
+    //~ var durationElement = document.getElementById('duration');
+    //~ var duration = parseInt(durationElement.dataset.duration); // Convierte la duración a un número entero en segundos
+
+    //~ var redirectElement = document.getElementById('redirect-url');
+    //~ var redirectUrl = redirectElement.dataset.url;
+
+    //~ var timerElement = document.getElementById('timer');
+
+    //~ var timer = setInterval(function() {
+        //~ // Actualiza el tiempo restante
+        //~ duration -= 1;
+
+        //~ // Verifica si se ha excedido la duración
+        //~ if (duration <= 0) {
+            //~ clearInterval(timer); // Detiene el temporizador
+            //~ // Aquí puedes redirigir a otra página o tomar alguna otra acción
+            //~ $.ajax({
+                //~ url: '/student/time-out/',  // Reemplaza '/ruta-de-la-vista/' con la URL de tu vista en Django
+                //~ method: 'POST',
+                //~ success: function(response) {
+                    //~ // Realiza acciones después de recibir la respuesta exitosa desde Django
+                    //~ console.log('Solicitud AJAX enviada con éxito');
+                    
+                    //~ window.location.href = response.redirect_url;
+                    //~ timeOutRedirecting = true;
+                    
+                //~ },
+                //~ error: function(xhr, textStatus, errorThrown) {
+                    //~ // Maneja los errores de la solicitud aquí
+                    //~ console.error(errorThrown);
+                //~ }
+            //~ });
+        //~ }
+
+        //~ // Convierte la duración a formato hh:mm:ss
+        //~ var hours = Math.floor(duration / 3600);
+        //~ var minutes = Math.floor((duration % 3600) / 60);
+        //~ var seconds = duration % 60;
+
+        //~ // Formatea el tiempo restante como cadena de texto
+        //~ var formattedTime = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+
+        //~ // Muestra el tiempo restante en el elemento del temporizador
+        //~ timerElement.textContent = 'Tiempo restante: ' + formattedTime;
+    //~ }, 1000); // Ejecuta la función cada segundo (1000 milisegundos)
+
+</script>
+{% endblock %}

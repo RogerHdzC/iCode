@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+  {% if submission_list.0.2 %}
+    {{ submission_list.0.2.media }}
+  {% endif %}
+{% endblock %}
+
+{% block title %}
+  {% include "core/return_button.html" %}
+  {{ submission_list.0.0.assignment }}
+{% endblock %}
+
+
+{% block content %}
+  <div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Entregas
+    </button>
+    <ul class="dropdown-menu">
+      {% for submission, _, _ in submission_list %}
+        <li class="dropdown-item">
+          <button class="btn btn-outline-secondary" onclick="show_submission('submission_{{ forloop.counter }}');">
+            <i class="fa-solid fa-calendar-days"></i> {{ submission.submit_time }}  
+            <i class="fa-solid fa-file-pen"></i> {{ submission.grade|floatformat }}
+          </button>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  
+  {% for submission, multiple_choice_formset, coding_formset in submission_list %}
+    <div id="submission_{{ forloop.counter }}" class="submission" {% if forloop.counter != submission_list|length %} hidden {% endif %}>
+      <h2>Entrega {{ forloop.counter }}: {{ submission.submit_time }}</h2>
+      <h3>Calificación: {{ submission.grade|floatformat }}</h3>
+      <div class="my-4">
+        
+        {% for form in multiple_choice_formset %}
+          <h4>{{ form.instance.exercise }}</h4>
+          <p>{{ form.instance.exercise.description }}</p>
+          {% if form.instance.passed %}
+            <p>Correcto <i class="fa-solid fa-check" style="color: #33d17a;"></i></p>
+          {% else %}
+            <p>Incorrecto <i class="fa-solid fa-xmark" style="color: #e01b24;"></i></p>
+          {% endif %}
+          {{ form|crispy }}
+          <p>Explicación: {{ form.instance.exercise.explanation }}</p>
+          <hr>
+        {% endfor %}
+        
+        {% for form in coding_formset %}
+          <h4>{{ form.instance.exercise }}</h4>
+          <p>{{ form.instance.exercise.description }}</p>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-secondary dropdown-toggle text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Casos de prueba
+            </button>
+            <ul class="dropdown-menu">
+              {% for test_case in form.instance.exercise.test_cases.all %}
+                <li class="dropdown-item">{{ test_case }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% if form.instance.passed %}
+            <p>Correcto <i class="fa-solid fa-check" style="color: #33d17a;"></i></p>
+          {% else %}
+            <p>Incorrecto <i class="fa-solid fa-xmark" style="color: #e01b24;"></i></p>
+          {% endif %}
+          {{ form|crispy }}
+          <hr>
+        {% endfor %}
+        
+      </div>
+    </div>
+  {% endfor %}
+  
+  <script>
+    function show_submission(id) {
+      var submissions = document.getElementsByClassName("submission");
+      for (const s of submissions) {
+        s.hidden = true;
+      }
+      document.getElementById(id).hidden = false;
+    }
+  </script>
+{% endblock %}
+
+

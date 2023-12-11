@@ -1,0 +1,9 @@
+{% extends "admin/change_form.html" %}
+
+<h1>Plantilla Personalizada Ejercicio</h1>
+{% block content %}
+    {{ block.super }}
+    {% if review_exercise %}
+        <p>{{ review_exercise|safe }}</p>
+    {% endif %}
+{% endblock %}

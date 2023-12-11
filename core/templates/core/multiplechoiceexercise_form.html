@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if object %}
+    Actualizar Ejercicio de Opción Múltiple
+{% else %}
+    Nuevo Ejercicio de Opción Múltiple
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<form action="" method="post" id="upload_form" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="row mb-4">
+        <div class="col">
+        <label class="form-label" for="type">Tipo de ejercicio</label>
+        <div id="type" class="form-group">
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="coding" id="coding" onclick="window.location='{% url 'professor:new_coding' %}';">
+            <label class="form-check-label" for="coding">
+                Codificación
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="multiple_choice" id="multiple_choice" onclick="window.location='{% url 'professor:new_multiple_choice' %}';" checked>
+            <label class="form-check-label" for="multiple_choice">
+                Opción múltiple
+            </label>
+        </div>
+        </div>
+        </div>
+
+        <div class="form-group col">
+            <label class="form-label" for="json-file">Cargar desde JSON</label>
+            <input class="form-control" type="file" name="json-file" id="json-file" accept=".json">
+        </div>
+    </div>
+
+    {{ form|crispy }}
+    
+    <h2>Opciones de Respuesta
+        <button type="button" class="btn btn-primary" onclick='addOption()'><i class="fa-solid fa-plus"></i></button>
+    </h2>
+    <div id="options">
+        {{ formset.management_form }}
+        
+        {% for form in formset %}
+            <h3>Opción {{ forloop.counter }}</h3>
+            <div class="multiField option">
+                {{ form|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if object %}
+        <input type="submit" class="btn btn-primary" value="Actualizar Ejercicio">
+    {% else %}
+        <input type="submit" class="btn btn-primary" value="Crear Ejercicio">
+    {% endif %}
+
+</form>
+
+
+<script>
+
+    function removeAccentsAndLowercase(str) {
+        var result = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (result.includes("media")) {
+            result = "media"
+        }
+        console.log(result)
+        return result
+    }
+
+    var inputFile = document.getElementById("json-file");
+    inputFile.addEventListener("change", function (){
+        var file = inputFile.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function() {
+            var data = JSON.parse(reader.result);
+            document.getElementById("id_author").value = data.author;
+            document.getElementById("id_title").value = data.title;
+            document.getElementById("id_description").value = data.description;
+            const re = /[0-9]+\.[0-9]+/;
+            document.getElementById("id_topic").value = re.exec(data.topic);
+            document.getElementById("id_difficulty").value = removeAccentsAndLowercase(data.difficulty);
+            document.getElementById("id_answer").value = data.answer;
+            document.getElementById("id_explanation").value = data.explanation;
+            
+            options = document.getElementsByClassName("option")
+            for (let i=options.length; i < data.options.length; i++) {
+                addOption();
+            }
+            
+            for (let i=0; i < options.length; i++) {
+                const child = options[i];
+                console.log(child.children[0])
+                child.children[0].children[1].value = data.options[i]["text"]
+            }
+        };
+
+        reader.readAsText(file);
+    });
+
+    function addOption() {
+        let options = document.getElementById("options")
+        let totalForms = document.getElementById("id_options-TOTAL_FORMS")
+        
+        let div = document.createElement("div");
+        div.classList.add("multiField", "option");
+        let newForm = `{{ formset.empty_form|crispy }}`.trim().replaceAll("__prefix__", totalForms.value);
+        div.innerHTML = newForm
+        
+        let caseTitle = document.createElement("h3");
+        let titleText = document.createTextNode("Opción " + (parseInt(totalForms.value) + 1));
+        caseTitle.appendChild(titleText);
+
+        options.appendChild(caseTitle)
+        options.appendChild(div);
+        totalForms.value++;
+    }
+    
+    // Esta función es necesaria para actualizar el valor correcto del número de forms en el management form de Django en caso de que se recargue la página después de haber creado más forms con la función addOption()
+    window.onload = () => {
+        let totalForms = document.getElementById("id_options-TOTAL_FORMS");
+        let currentForms = document.getElementsByClassName("option").length;
+        totalForms.value = currentForms;
+    };
+
+</script>
+
+{% endblock %}

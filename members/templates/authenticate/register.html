@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+Registro de Usuario
+{% endblock %}
+
+{% block content %}
+{% if form.errors %} 
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Hubo un error en tu registro...
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% endif %}
+
+
+<form action="" method="POST"> {%csrf_token%}
+    
+    {{ form|crispy}}
+
+    <button type="submit" class="btn btn-primary">Registrarse</button>
+  </form>
+{% endblock %}

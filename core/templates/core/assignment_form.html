@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Nueva Actividad
+{% endblock %}
+
+{% block content %}
+<form action="" method="post" id="upload_form" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+    
+    <h2>Ejercicios
+        <button type="button" class="btn btn-primary" onclick='addExerciseGroup()'><i class="fa-solid fa-plus"></i></button>
+    </h2>
+    <div id="exercises">
+        {{ exercise_formset.management_form }}
+        
+        {% for form in exercise_formset %}
+            <h3>Grupo de Ejercicios {{ forloop.counter }}</h3>
+            <div class="multiField exercise">
+                {{ form|crispy }}
+            </div>
+        {% endfor %}
+
+    </div>
+    
+    <input class="btn btn-primary" type="submit" value="Crear Actividad">
+    <input class="btn btn-secondary" type="submit" value="Cancelar" onclick="window.location.href='{% url 'professor:course_assignments' pk=course_id %}';return false;">
+</form>
+
+
+<script>   
+    // Esta función se encarga de crear un nuevo formulario para un grupo de ejercicios de la actividad.
+    function addExerciseGroup() {
+        let exercises = document.getElementById("exercises")
+        let totalForms = document.getElementById("id_assignmentexercisegroup_set-TOTAL_FORMS")
+        
+        let div = document.createElement("div");
+        div.classList.add("multiField", "exercise");
+        let newForm = `{{ exercise_formset.empty_form|crispy }}`.trim().replaceAll("__prefix__", totalForms.value);
+        div.innerHTML = newForm
+        
+        let caseTitle = document.createElement("h3");
+        let titleText = document.createTextNode("Grupo de Ejercicios " + (parseInt(totalForms.value) + 1));
+        caseTitle.appendChild(titleText);
+
+        exercises.appendChild(caseTitle)
+        exercises.appendChild(div);
+        totalForms.value++;
+    }
+    
+    // Esta función es necesaria para actualizar el valor correcto del número de forms en el management form de Django en caso de que se recargue la página después de haber creado más forms con la función addExerciseGroup()
+    window.onload = () => {
+        let totalForms = document.getElementById("id_assignmentexercisegroup_set-TOTAL_FORMS");
+        let currentForms = document.getElementsByClassName("exercise").length;
+        totalForms.value = currentForms;
+    };
+    
+</script>
+
+{% endblock %}

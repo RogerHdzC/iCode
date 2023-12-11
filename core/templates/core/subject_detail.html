@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block head %}
+{{ form.media }}
+{% endblock %}
+
+{% block title %} 
+{% if selected_exercise %}
+{{tema}}
+{{skips}}
+<h3 class="mb-3">Ejercicios de nivel {{level}}: {{num}}/5</h3>
+{% else %}
+{{subject.name}}
+<h3 class="mb-3">Ejercicios de nivel {{level}}: {{num}}/5</h3>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if selected_exercise %}
+    <p><strong> Nombre del ejercicio: </strong> {{ selected_exercise.title }}</p>
+    <p><strong> Descripción: </strong>{{ selected_exercise.description }}</p>
+{% else %}
+    {% for coding_exercise in coding_exercises %}
+        <p><strong> Nombre del ejercicio: </strong> {{ coding_exercise.title|safe }}</p>
+        <p><strong> Descripción: </strong>{{ coding_exercise.description|safe }}</p>
+    {% endfor %}
+{% endif %}
+
+<div id="skips" data-skips="{{skips}}"></div>
+<div id="level" data-level="{{level}}"></div>
+<div id="subject" data-subject="{{subject.id}}"></div>
+
+<form action="" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    {% if result == "Pasaste" %}
+        <input  class="btn btn-secondary" type="submit" value='Completado' disabled> 
+        <input  class="btn btn-primary" type="button" value='Siguiente' onclick='reloadPage()'>
+    {% else %} 
+        <input class="btn btn-primary" type="submit" value='Submit'>
+        <input class="btn btn-secondary" type="button" id='skip-button' value="Skip" onclick="skipQuestion()">
+        <span id="compiling-message" style="display: none; font-weight: bold;">En Proceso...</span>
+    {% endif %}
+</form>
+
+
+
+<p>
+    {% if result != "Pasaste" %}
+     {{result}}
+     <br>
+     <strong>Stdout:</strong> {{stdout}}
+     <br>
+     {% if stderr %} 
+       <strong>Stderr:</strong> {{stderr}}
+     {% endif %} 
+    {% else %} 
+    <strong>{{result}}</strong>
+    {{errors}}
+    {% endif %}
+    
+</p>
+
+<script>
+    const submitButton = document.querySelector('input[type="submit"]');
+    const skipButton = document.getElementById('skip-button');
+    const compilingMessage = document.getElementById('compiling-message');
+    let dots = '';
+    const skipsElement = document.getElementById('skips');
+    const skips = parseInt(skipsElement.dataset.skips);
+    const levelElement = document.getElementById('level');
+    const level = levelElement.dataset.level;
+    const subjectElement = document.getElementById('subject');
+    const subject = subjectElement.dataset.subject;
+
+
+    function reloadPage(){
+        window.location.href = window.location.href;
+    }
+
+    function skipQuestion(){
+        if(skips < 3){
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/actualizar-skips/', true);
+            xhr.setRequestHeader('Content-type', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function() {
+                if(xhr.readyState === 4 && xhr.status === 200){
+                    skips++;
+                    skipsElement.innerText = skips;
+                    alert("Skip realizado");
+                } else if(xhr.readyState === 4 && xhr.status != 200){
+                    alert("Error al realizar el Skip");
+                }
+            };
+            xhr.send(JSON.stringify({skips:skips, level:level, subject:subject}));
+            window.location.href = window.location.href;
+        } else {
+            alert("Ya no tienes Skips disponibles");
+            skipButton.disabled = true;
+
+        }
+
+        
+    }
+    
+    document.addEventListener('keydown', function(event) {
+        var key = event.key || event.keyCode;
+        if (key === 'F5' || key === 'Refresh' || key === 116) {
+            event.preventDefault();
+        }
+    });
+
+    submitButton.addEventListener('click', function() {
+        compilingMessage.style.display = 'inline'; // Mostrar mensaje de "compiling..."
+
+        const interval = setInterval(function() {
+            dots += '.';
+            compilingMessage.innerText = 'En Proceso' + dots
+
+            if (dots.length > 3){
+                dots = '';
+            }
+        }, 1000);
+
+        setTimeout(function(){
+            clearInterval(interval);
+
+        }, 5000);
+    });
+
+
+    window.addEventListener('beforeunload', function(event) {
+  // Aquí puedes realizar las acciones que desees antes de que el usuario recargue la página
+  // Por ejemplo, mostrar un mensaje de confirmación o ejecutar alguna función
+  // Ten en cuenta que los navegadores modernos pueden restringir ciertas acciones en este evento
+
+  // Ejemplo: Mostrar un mensaje de confirmación personalizado
+  alert("usaste la flechita");  
+});
+
+</script>
+
+{% endblock %}

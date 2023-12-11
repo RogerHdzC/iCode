@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {{ course.name }}
+{% endblock %}
+ 
+{% block content %}
+<h2 class="mb-3">Actividades del curso</h2>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+  {% for assignment, available, pending_submission, submitted_attempts, current_grade in assignment_list %}
+  <div class="col">
+    <div class="card shadow
+    {% if submitted_attempts %}
+      border-success
+    {% elif not available %}
+      border-danger
+    {% else %}
+      border-primary
+    {% endif %}
+    ">
+      <div class="card-body">
+        <h5 class="card-title text-center
+        {% if submitted_attempts %}
+          text-success
+        {% elif not available %}
+          text-danger
+        {% else %}
+          text-primary
+        {% endif %}
+        ">
+        {{ assignment.name }}
+        </h5>
+        <p class="card-text">Límite: {{assignment.due}}</p>
+        <p class="card-text">Calificación: <b>{{ current_grade|default:'0'|floatformat }}</b></p>
+        <p class="card-text"><b>{{ submitted_attempts }}</b> de <b>{{ assignment.attempts }}</b> intentos utilizados</p>
+        {% if available and submitted_attempts < assignment.attempts %}
+          <a href="{% url 'student:new_submission' assignment_id=assignment.id%}" class="card-link container-fluid btn mt-2
+          {% if submitted_attempts %}
+            btn-outline-success
+          {% elif not available %}
+            btn-outline-danger
+          {% else %}
+            btn-outline-primary
+          {% endif %}
+          ">
+            {% if pending_submission %}
+              Continuar actividad
+            {% else %}
+              Iniciar actividad
+            {% endif %}
+          </a>
+        {% endif %}
+        {% if submitted_attempts %} 
+          <a href="{% url 'student:review_submission' assignment_id=assignment.id%}" class="container-fluid btn btn-outline-success mt-2">Revisar entregas</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

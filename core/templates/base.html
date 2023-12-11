@@ -1,0 +1,39 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iCode</title>
+    <link href="{% static 'core/css/bootstrap.min.css' %}" rel="stylesheet">
+    {% block head %}{% endblock %}
+  </head>
+  
+  <body>
+    {% include 'navbar.html' %} 
+    <div class="container-lg p-4">
+      <div id="title" style="position:relative;">
+        <h1 class="mb-4">
+          {% block title %}{% endblock %}
+        </h1>
+      </div>
+      
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+      <div id="content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+    
+    <script src="{% static 'core/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://kit.fontawesome.com/6894ba34fd.js" crossorigin="anonymous" async></script>
+    {% include 'footer.html' %}
+  </body>
+</html>

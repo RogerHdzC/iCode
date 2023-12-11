@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+{% if object %}
+    Actualizar Ejercicio de Codificación
+{% else %}
+    Nuevo Ejercicio de Codificación
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<form action="" method="post" id="upload_form" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="row mb-4">
+        <div class="col">
+            <label class="form-label" for="type">Tipo de ejercicio</label>
+            <div id="type" class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="coding" id="coding" onclick="window.location='{% url 'professor:new_coding' %}';" checked>
+                    <label class="form-check-label" for="coding">
+                        Codificación
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="multiple_choice" id="multiple_choice" onclick="window.location='{% url 'professor:new_multiple_choice' %}';">
+                    <label class="form-check-label" for="multiple_choice">
+                        Opción múltiple
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group col">
+            <label class="form-label" for="json-file">Cargar desde JSON</label>
+            <input class="form-control" type="file" name="json-file" id="json-file" accept=".json">
+        </div>
+
+    </div>
+
+    {{ form|crispy }}
+    
+    <h2>Casos de Prueba
+        <button type="button" class="btn btn-primary" onclick='addTestCase()'><i class="fa-solid fa-plus"></i></button>
+    </h2>
+    <div id="test_cases">
+        {{ formset.management_form }}
+        
+        {% for form in formset %}
+            <h3>Caso {{ forloop.counter }}</h3>
+            <div class="multiField test_case">
+                {{ form|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% if object %}
+        <input type="submit" class="btn btn-primary" value="Actualizar Ejercicio" />
+    {% else %}
+        <input type="submit" class="btn btn-primary" value="Crear Ejercicio" />
+    {% endif %}
+
+</form>
+
+
+<script>
+    
+    function removeAccentsAndLowercase(str) {
+        var result = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (result.includes("media")) {
+            result = "media"
+        }
+        return result
+    }
+
+    var inputFile = document.getElementById("json-file");
+    inputFile.addEventListener("change", function (){
+        var file = inputFile.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function() {
+            var data = JSON.parse(reader.result);
+            console.log(data)
+            document.getElementById("id_author").value = data.author;
+            document.getElementById("id_title").value = data.title;
+            document.getElementById("id_description").value = data.description;
+            const re = /[0-9]+\.[0-9]+/;
+            document.getElementById("id_topic").value = re.exec(data.topic);
+            document.getElementById("id_difficulty").value = removeAccentsAndLowercase(data.difficulty);
+            
+            testCases = document.getElementsByClassName("test_case")
+            for (let i=testCases.length; i < data.tests.length; i++) {
+                addTestCase();
+            }
+            
+            for (let i=0; i < testCases.length; i++) {
+                const child = testCases[i];
+                child.children[0].children[1].value = data.tests[i]["input"]
+                child.children[1].children[1].value = data.tests[i]["output"]
+            }
+        };
+
+        reader.readAsText(file);
+    });
+    
+    function addTestCase() {
+        let testCases = document.getElementById("test_cases")
+        let totalForms = document.getElementById("id_test_cases-TOTAL_FORMS")
+        
+        let div = document.createElement("div");
+        div.classList.add("multiField", "test_case");
+        let newForm = `{{ formset.empty_form|crispy }}`.trim().replaceAll("__prefix__", totalForms.value);
+        div.innerHTML = newForm
+        
+        let caseTitle = document.createElement("h3");
+        let titleText = document.createTextNode("Caso " + (parseInt(totalForms.value) + 1));
+        caseTitle.appendChild(titleText);
+
+        testCases.appendChild(caseTitle)
+        testCases.appendChild(div);
+        totalForms.value++;
+    }
+    
+    // Esta función es necesaria para actualizar el valor correcto del número de forms en el management form de Django en caso de que se recargue la página después de haber creado más forms con la función addTestCase()
+    window.onload = () => {
+        let totalForms = document.getElementById("id_test_cases-TOTAL_FORMS");
+        let currentForms = document.getElementsByClassName("test_case").length;
+        totalForms.value = currentForms;
+    };
+</script>
+
+{% endblock %}

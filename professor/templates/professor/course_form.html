@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Nuevo Curso
+{% endblock %}
+
+{% block content %}
+<form action="" method="post" id="upload_form" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <input class="btn btn-primary" type="submit" value="Crear Curso">
+    <input class="btn btn-secondary" type="submit" value="Cancelar" onclick="window.location.href='{% url 'professor:courses' %}';return false;">
+</form>
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+  {{ course.name }}
+  <button class="btn btn-secondary" onclick='copyContent()'>Copiar ID <i class="fa-solid fa-copy"></i></button>
+  <a class="btn btn-success" href="{% url 'professor:course_students' pk=course.id %}">Estudiantes <i class="fa-solid fa-users"></i></a>
+  <a class="btn btn-danger" href="{% url 'professor:delete_course' pk=course.id %}"><i class="fa-solid fa-trash"></i></a>
+{% endblock %}
+
+{% block content %}
+  <h2 class="mb-3">Actividades del Curso
+  <a class="btn btn-primary" href="{% url 'professor:new_assignment' course_id=course.id %}"><i class="fa-solid fa-plus"></i></a>
+  <br>
+  </h2>
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+  {% for assignment in course.assignment_set.all %}
+  <div class="col-md-3 mb-3">
+    <div class="card rounded text-center custom-card shadow" >
+      <div class="card-body d-flex flex-column justify-content-between">
+        <div class="mt-auto">
+          <a class="btn btn-danger btn-sm" href="{% url 'professor:delete_assignment' pk=assignment.id %}" style="float: right;"><i class="fa-solid fa-trash fa-xs"></i></a>
+          <h5 class="card-title cast-title">{{ assignment.name }}</h5> 
+          <p class="card-body">Límite: {{assignment.due}}</p>
+          <a href="{% url 'professor:assignment_submissions' pk=assignment.id %}" class="btn btn-primary course-button">Ver Entregas</a>
+        </div> 
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+
+  <script>
+  const copyContent = () => {
+    const textarea = document.createElement("textarea");
+    textarea.textContent = "{{ course.id|escapejs }}";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    console.log("copied content")
+  };
+    
+  </script>
+
+  <style>
+    .custom-card {
+      border: 1px solid rgba(0, 0, 0, 0.125);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 5px solid #00447C;
+    }
+
+    .custom-card:hover,
+    .custom-card:focus{
+      transform: translateY(-5px);
+    }
+
+    .card-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .course-button{
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      border-radius: 0;
+      border: 1px solid #6c757d;
+      background-color: #fff;
+      color: #6c757d;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .course-button:hover,
+    .course-button:focus {
+      color: #fff;
+      background-color: #6c757d;
+      border-color: #6c757d;
+    }
+    
+  </style>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {{ course.name }}
+  <button class="btn btn-secondary" onclick='copyContent()'>Copiar ID <i class="fa-solid fa-copy"></i></button>
+  <a class="btn btn-success" href="{% url 'professor:course_assignments' pk=course.id %}">Actividades <i class="fa-solid fa-book"></i></a>
+  <a class="btn btn-danger" href="{% url 'professor:delete_course' pk=course.id %}"><i class="fa-solid fa-trash" ></i></a>
+{% endblock %}
+
+{% block content %}
+  <h2 class="mb-3">Estudiantes Inscritos</h2>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Matrícula</th>
+        <th scope="col">Nombre</th>
+        <th scope="col">Apellidos</th>
+        <th scope="col">Eliminar</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in course.students.all %}
+      <tr>
+        <th scope="row">{{ forloop.counter }}</th>
+        <td>{{ student.email|slice:':9' }}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.last_name }}</td>
+        <td>
+          <a class="btn btn-danger" href="{% url 'professor:delete_enrollment' course_id=course.id student_id=student.id %}">
+            <i class="fa-solid fa-trash" ></i>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <script>
+  const copyContent = () => {
+    const textarea = document.createElement("textarea");
+    textarea.textContent = "{{ course.id|escapejs }}";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  };
+
+  </script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% load static %}
+
+<head>
+<!--
+  <style> 
+    .navbar {
+      height: 44px;
+    }
+    .custom-nav a {
+        font-size: 16px;
+        color: #333333; /* Color del texto normal */
+    }
+
+    .custom-nav a:hover,
+    .custom-nav a:focus{
+      color: #ffffff !important;
+    }
+    .custom-nav .active {
+      color: #ffffff !important; /* Color del texto cuando se interactúa con él o está activo */
+      border-bottom: 2px solid #ffffff;
+      
+    }
+</style>
+-->
+</head>
+
+<nav class="navbar navbar-expand-md p-0" style="background-color: #80bef5;">
+    <div class="container-fluid">
+      <a class="navbar-brand p-0" href="{% url 'core:code' %}">
+        <img src="{% static 'core/images/logo_icode.png' %}" alt="icode logo" height="64">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mx-2 p-2">
+<!--
+          <li class="nav-item">
+            <a class="nav-link" id="nav-main"href="{% url 'test_email' %}">Test email</a>
+          </li>
+-->
+          {% if user.is_authenticated %}
+          
+            <li class="nav-item">
+              <a class="nav-link" id="nav-main"href="{% url 'core:code' %}">Código</a>
+            </li>
+            
+            {% if user.role == user.PROFESSOR %}
+            
+            <li class ="nav-item">
+              <a class="nav-link" id="nav-professor-courses" href="{% url 'professor:courses' %}">Cursos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="nav-my-exercises" href="{% url 'professor:my_exercises' %}">Mis Ejercicios</a>
+            </li>
+            
+            {% elif user.role == user.STUDENT %}
+            
+            <li>
+              <a class="nav-link" id="nav-student-courses" href="{% url 'student:courses' %}">Cursos</a>
+            </li>
+            
+            {% endif %}
+            
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+            </li>
+            
+            {% else %}
+            
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'register' %}">Registrarse</a>
+            </li>
+            
+          {% endif %} 
+        </ul>
+        <ul class="navbar-nav navbar-dark ms-auto mx-2 p-2">
+          {% if user.is_authenticated %}
+          <li>
+            {{ user.name }}            
+            {% if user.role == user.PROFESSOR %}
+              <i class="fa-solid fa-user-tie"></i>
+            {% else %}
+              <i class="fa-solid fa-user"></i>
+            {% endif %}
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+

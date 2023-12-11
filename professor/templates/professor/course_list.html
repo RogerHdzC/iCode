@@ -1,0 +1,83 @@
+{% extends 'base.html' %} 
+
+
+{% block title %}
+Mis Cursos
+<a class="btn btn-primary" href="{% url 'professor:new_course' %}"><i class="fa-solid fa-plus"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+  {% for course in course_list %}
+  <div class="col">
+    <div class="card rounded text-center custom-card shadow" >
+      <div class="card-body d-flex flex-column justify-content-between">
+        <div class="mt-auto">
+          <h5 class="card-title cast-title">{{ course.name }}</h5>
+          <a href="{% url 'professor:course_students' pk=course.id %}" class="btn btn-primary course-button">Ir a curso</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var currentPath = "{{request.path}}";
+
+    var navItems = document.querySelectorAll('.navbar-nav .nav-item');
+    navItems.forEach(function(item) {
+      var link = item.querySelector('.nav-link');
+      var href = link.getAttribute('href');
+      
+      if(currentPath === href){
+        item.classList.add('active');
+        link.classList.add('active')
+      }
+    });
+  });
+</script>
+
+<style>
+.custom-card {
+  height: 150px;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-left: 5px solid #00447C;
+}
+
+.custom-card:hover,
+.custom-card:focus{
+  transform: translateY(-5px);
+}
+
+.card-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.course-button{
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0;
+  border: 1px solid #6c757d;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease-in-out;
+}
+
+.course-button:hover,
+.course-button:focus {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+</style>
+{% endblock %}
